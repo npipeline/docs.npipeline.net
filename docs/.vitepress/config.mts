@@ -40,9 +40,10 @@ export default defineConfig({
   sitemap: {
     hostname: 'https://docs.npipeline.net'
   },
-  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }]],
+  head: [['link', { rel: 'icon', type: 'image/png', href: '/icon.png' }]],
 
   themeConfig: {
+    logo: '/icon.png',
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Getting Started', link: '/getting-started/' },
