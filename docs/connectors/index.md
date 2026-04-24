@@ -1,9 +1,181 @@
 ---
-title: Connectors
-order: 6
-description: Data connectors in NPipeline
+title: Connectors Overview
+description: An overview of the available source and sink connectors for integrating NPipelines with external systems.
+sidebar_position: 1
+slug: /connectors
 ---
 
-# Connectors
+## Connectors Overview
 
-Documentation content will be synced from the NPipeline repository.
+Connectors are pre-built nodes that make it easy to read data from and write data to external systems. They are specialized `ISourceNode` and `ISinkNode` implementations that handle the specifics of communicating with systems like databases, file formats, message queues, and cloud services.
+
+Using connectors, you can quickly assemble pipelines that integrate with your existing infrastructure without having to write boilerplate code for file I/O or network communication.
+
+## Core Concepts
+
+### Storage Abstraction
+
+All connectors work through the `IStorageProvider` abstraction from the `NPipeline.StorageProviders` project, which enables them to work with multiple backend systems:
+
+- **[Storage Provider Interface](../storage-providers/storage-provider.md)** - Learn about the abstraction layer that powers connectors
+  - Works with filesystems, cloud storage (S3, Azure), databases, and custom backends
+  - Unified API for read, write, delete, list, and metadata operations
+  - Built-in support for filesystem with resilient directory traversal
+
+> **Note:** Connectors depend on `NPipeline.StorageProviders` for storage abstractions. The storage provider interfaces and implementations have been extracted from `NPipeline.Connectors` into a separate `NPipeline.StorageProviders` project.
+
+### Common Attributes
+
+All connectors support common attributes from `NPipeline.Connectors.Attributes` that provide a unified way to map properties across different data sources:
+
+- **`[Column]`**: Specify column names and control property mapping
+- **`[IgnoreColumn]`**: Exclude properties from mapping
+
+These common attributes work across all connectors (CSV, Excel, PostgreSQL, SQL Server, etc.) and are recommended for new code. Each connector also provides connector-specific attributes for backward compatibility and advanced features. See individual connector documentation for details and examples.
+
+## Available Connectors
+
+The following connectors are available:
+
+- **[Azure Service Bus](./azure-service-bus.md)**: Read from and write to Azure Service Bus queues and topics.
+  - Queue and topic/subscription source and sink nodes with JSON serialization
+  - Explicit settlement support (Complete, Abandon, DeadLetter, Defer) via `ServiceBusMessage<T>`
+  - Session-enabled source processing with per-session ordering guarantees
+  - Multiple authentication modes (connection string, Azure AD, endpoint + key, named connections)
+  - Batching, dead-letter handling, lock renewal, and retry configuration
+- **[Azure Cosmos DB](./cosmos.md)**: Read from and write to Azure Cosmos DB databases.
+  - Supports SQL API with parameterized queries and change feed streaming
+  - Multi-API support for Mongo and Cassandra APIs
+  - Multiple write strategies (PerRow, Batch, TransactionalBatch, Bulk)
+  - Azure AD authentication and connection pooling
+  - Uses Azure.Cosmos SDK for reliable operations
+- **[AWS SQS](./aws-sqs.md)**: Read from and write to Amazon Simple Queue Service (SQS).
+  - Supports multiple acknowledgment strategies (AutoOnSinkSuccess, Manual, Delayed, None)
+  - Includes batch acknowledgment for performance optimization
+  - Configurable long polling, parallel processing, and retry logic
+  - Uses AWSSDK.SQS for reliable SQS operations
+- **[CSV](./csv.md)**: Read from and write to Comma-Separated Values (CSV) files.
+  - Works with any storage backend via the `IStorageProvider` abstraction from `NPipeline.StorageProviders`
+- **[Data Lake](./datalake.md)**: Write and read partitioned Parquet tables with snapshot tracking.
+  - Hive-style partitioning (`column=value/` directories) compatible with Spark, Athena, Trino, DuckDB
+  - NDJSON manifest with per-snapshot file inventory for auditability
+  - Time travel — query table state as of any timestamp or snapshot ID
+  - Small-file compaction to optimise query engine performance
+  - Format adapter interface for Iceberg, Delta Lake, or custom table formats
+  - Built on `NPipeline.Connectors.Parquet`
+- **[DuckDB](./duckdb.md)**: Read from and write to DuckDB databases and query files directly.
+  - In-process analytical database — zero config, no separate server
+  - Direct queries on Parquet, CSV, and JSON files (local or S3)
+  - High-performance Appender API for bulk inserts
+  - Auto-create tables from CLR types with `[DuckDBColumn]` attributes
+  - Export pipeline data to Parquet/CSV via COPY TO
+  - Dependency injection support with named databases
+- **[Excel](./excel.md)**: Read from and write to Excel files (XLS and XLSX formats).
+  - Supports both legacy XLS (binary) and modern XLSX (Open XML) formats
+  - Configurable sheet selection, header handling, and type detection
+  - Works with any storage backend via the `IStorageProvider` abstraction from `NPipeline.StorageProviders`
+- **[HTTP](./http.md)**: Read from and write to REST APIs.
+  - Stream items from any paginated REST API with pluggable pagination strategies
+  - Write items to REST endpoints via POST, PUT, or PATCH with optional batching
+  - Multiple authentication schemes (Bearer token, API key, Basic auth)
+  - Retry with exponential backoff and `Retry-After` header support
+  - Token-bucket rate limiting and OpenTelemetry observability
+  - Named `HttpClient` integration for connection pooling
+- **[JSON](./json.md)**: Read from and write to JSON files (Array and NDJSON formats).
+  - Supports both JSON array and newline-delimited JSON (NDJSON) formats
+  - Configurable property naming policies, indentation, and error handling
+  - Uses System.Text.Json for efficient streaming with minimal dependencies
+  - Works with any storage backend via the `IStorageProvider` abstraction from `NPipeline.StorageProviders`
+- **[Kafka](./kafka.md)**: Read from and write to Apache Kafka topics.
+  - Supports multiple delivery semantics (at-least-once, exactly-once)
+  - Configurable batching, retry strategies, and error handling
+  - Multiple serialization formats (JSON, Avro, Protobuf)
+  - Transaction support with proper offset management
+  - Uses Confluent.Kafka for reliable Kafka operations
+- **[MongoDB](./mongodb.md)**: Read from and write to MongoDB databases.
+  - Streaming reads with IAsyncEnumerable pattern
+  - Multiple write strategies (InsertMany, Upsert, BulkWrite)
+  - Change stream support with operation filtering and resume-token-based restart
+  - Dependency injection support with connection pooling and named connections
+  - Uses official MongoDB C# Driver for reliable operations
+- **[MySQL](./mysql.md)**: Read from and write to MySQL and MariaDB databases.
+  - Supports streaming reads, per-row, batched, and bulk load (`LOAD DATA LOCAL INFILE`) writes
+  - Upsert via `INSERT … ON DUPLICATE KEY UPDATE`, `INSERT IGNORE`, and `REPLACE INTO`
+  - Attribute mapping with `[MySqlTable]`, `[MySqlColumn]`, `[Column]`, `[IgnoreColumn]`
+  - `mariadb://` StorageUri scheme supported alongside `mysql://`
+  - Uses MySqlConnector (fully async, MIT) for reliable operations
+- **[Parquet](./parquet.md)**: Read from and write to Apache Parquet files.
+  - Columnar storage optimised for analytical workloads
+  - Row-group streaming with bounded memory usage
+  - Configurable compression (Snappy, Gzip, None), column projection, and parallel reads
+  - Attribute-based or explicit row mapping
+  - Schema evolution via `SchemaCompatibilityMode` (Strict, Additive, NameOnly)
+  - Atomic writes and observability hooks via `IParquetConnectorObserver`
+  - Works with any storage backend via `IStorageProvider`
+- **[PostgreSQL](./postgres.md)**: Read from and write to PostgreSQL databases.
+  - Supports streaming reads, per-row and batched writes, and in-memory checkpointing
+  - Uses Npgsql library for reliable database operations
+- **[RabbitMQ](./rabbitmq.md)**: Read from and write to RabbitMQ message queues.
+  - Push-based consumers with backpressure and configurable prefetch
+  - Publisher confirms and automatic topology declaration
+  - Dead-letter handling at both broker and pipeline levels
+  - Support for Classic, Quorum, and Stream queue types
+  - Uses RabbitMQ.Client 7.x for fully asynchronous operations
+- **[Snowflake](./snowflake.md)**: Read from and write to Snowflake cloud data warehouses.
+  - Supports streaming reads, per-row writes, batched writes, and bulk loading via PUT + COPY INTO
+  - Three write strategies: PerRow, Batch, and StagedCopy for optimal throughput
+  - MERGE-based upsert support with configurable merge actions
+  - Uses Snowflake.Data official ADO.NET driver for reliable operations
+  - Supports password and key-pair (JWT) authentication
+- **[SQL Server](./sqlserver.md)**: Read from and write to Microsoft SQL Server databases.
+  - Supports streaming reads, per-row and batched writes, and in-memory checkpointing
+  - Uses Microsoft.Data.SqlClient for reliable database operations
+  - Supports Windows Authentication and SQL Server Authentication
+
+## General Usage Pattern
+
+Most source connectors are added to a pipeline using `AddSource()` and sink connectors are added using `AddSink()`.
+When you need to pass configuration (file path, resolver, etc.), instantiate the connector and register it with the builder using the overloads that accept a preconfigured node instance. These helpers automatically call `AddPreconfiguredNodeInstance()` and track disposal for you.
+
+```csharp
+// Example of using a source and sink connector
+var pipeline = new PipelineBuilder()
+  // Read data from a source connector
+    .AddSource(new CsvSourceNode<User>(
+        StorageUri.FromFilePath("users.csv"),
+        row => new User(
+            row.Get<int>("Id") ?? 0,
+            row.Get<string>("Name") ?? string.Empty,
+            row.Get<string>("Email") ?? string.Empty)), "user_source")
+
+    // ... add transforms ...
+
+    // Write data to a sink connector
+    .AddSink(new CsvSinkNode<UserSummary>(StorageUri.FromFilePath("summaries.csv")), "summary_sink")
+  .Build();
+```
+
+> **Note:** NPipeline uses a storage abstraction layer from `NPipeline.StorageProviders` that requires `StorageUri` objects instead of plain file paths. Use `StorageUri.FromFilePath()` for local files or `StorageUri.Parse()` for absolute URIs (e.g., "s3://bucket/key"). For local files, the resolver is optional. For custom providers or cloud storage, create a resolver via `StorageProviderFactory.CreateResolver()` and pass it explicitly.
+
+Explore the documentation for each specific connector to learn about its installation, configuration options, and usage examples.
+
+## Next Steps
+
+- **[Azure Service Bus Connector](azure-service-bus.md)**: Learn how to read from and write to Azure Service Bus queues and topics
+- **[Azure Cosmos DB Connector](cosmos.md)**: Learn how to read from and write to Azure Cosmos DB
+- **[AWS SQS Connector](aws-sqs.md)**: Learn how to read from and write to Amazon SQS queues
+- **[CSV Connector](csv.md)**: Learn how to read from and write to CSV files
+- **[Data Lake Connector](datalake.md)**: Learn how to write partitioned tables, use time travel, and compact small files
+- **[DuckDB Connector](duckdb.md)**: Learn how to read from and write to DuckDB databases and query files directly
+- **[Excel Connector](excel.md)**: Learn how to read from and write to Excel files (XLS and XLSX)
+- **[JSON Connector](json.md)**: Learn how to read from and write to JSON files (Array and NDJSON)
+- **[Kafka Connector](kafka.md)**: Learn how to read from and write to Apache Kafka topics
+- **[MongoDB Connector](mongodb.md)**: Learn how to read from and write to MongoDB databases
+- **[MySQL Connector](mysql.md)**: Learn how to read from and write to MySQL and MariaDB databases
+- **[Parquet Connector](parquet.md)**: Learn how to read from and write to Apache Parquet files
+- **[PostgreSQL Connector](postgres.md)**: Learn how to read from and write to PostgreSQL databases
+- **[RabbitMQ Connector](rabbitmq.md)**: Learn how to read from and write to RabbitMQ message queues
+- **[Snowflake Connector](snowflake.md)**: Learn how to read from and write to Snowflake cloud data warehouses
+- **[SQL Server Connector](sqlserver.md)**: Learn how to read from and write to Microsoft SQL Server databases
+- **[Common Patterns](../core-concepts/common-patterns.md)**: See connectors in practical examples
+- **[Installation](../getting-started/installation.md)**: Review installation options for connector packages

@@ -1,0 +1,9 @@
+{
+  "label": "Observability",
+  "position": 6,
+  "link": {
+    "type": "doc",
+    "id": "extensions/observability/index"
+  }
+}
+
