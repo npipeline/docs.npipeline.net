@@ -1,0 +1,17 @@
+{
+  "name": "docs-npipeline-net",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "docs:dev": "cpy 'docs/.vitepress/public/*' docs/public && vitepress dev docs",
+    "docs:build": "cpy 'docs/.vitepress/public/*' docs/public && vitepress build docs",
+    "docs:preview": "vitepress preview docs"
+  },
+  "devDependencies": {
+    "cpy-cli": "^7.0.0",
+    "vitepress": "^1.6.4",
+    "vitepress-sidebar": "^1.33.1",
+    "vue": "^3.5.32"
+  }
+}
