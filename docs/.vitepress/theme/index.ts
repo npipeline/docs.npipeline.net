@@ -14,11 +14,17 @@ export default {
       const mermaidRenderer = createMermaidRenderer({
         theme: isDark.value ? "dark" : "default",
         themeVariables: {
-          fontSize: "30px",
+          fontSize: "24px",
         },
         flowchart: {
           useMaxWidth: true,
           htmlLabels: true,
+        },
+        sequence: {
+          useMaxWidth: true,
+        },
+        gantt: {
+          useMaxWidth: true,
         },
       });
 
