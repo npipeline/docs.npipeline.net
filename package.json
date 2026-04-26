@@ -9,9 +9,12 @@
     "docs:preview": "vitepress preview docs"
   },
   "devDependencies": {
-    "cpy-cli": "^7.0.0",
-    "vitepress": "^1.6.4",
-    "vitepress-sidebar": "^1.33.1",
-    "vue": "^3.5.33"
+    "cpy-cli": "7.0.0",
+    "vitepress": "1.6.4",
+    "vitepress-sidebar": "1.33.1",
+    "vue": "3.5.33"
+  },
+  "dependencies": {
+    "vitepress-plugin-mermaid": "2.0.17"
   }
 }

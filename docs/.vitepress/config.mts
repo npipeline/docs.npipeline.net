@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitepress'
 import { generateSidebar } from 'vitepress-sidebar'
+import { withMermaid } from 'vitepress-plugin-mermaid'
 
 const sidebar = generateSidebar({
   documentRootPath: '/docs',
@@ -32,11 +33,14 @@ function fixLinks(items: any[]): any[] {
   })
 }
 
-export default defineConfig({
+export default withMermaid({
   title: 'NPipeline',
   description: 'High-performance .NET data pipeline framework',
   cleanUrls: true,
   lastUpdated: true,
+  mermaid: {
+    theme: 'dark'
+  },
   sitemap: {
     hostname: 'https://docs.npipeline.net'
   },
@@ -63,7 +67,7 @@ export default defineConfig({
     sidebar: fixLinks(sidebar),
     footer: {
       message: 'Released under the MIT License.',
-      copyright: 'Copyright 2024-present NPipeline'
+      copyright: 'Copyright 2026-present NPipeline'
     }
   }
 })

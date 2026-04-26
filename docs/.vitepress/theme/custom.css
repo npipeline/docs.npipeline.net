@@ -51,3 +51,85 @@
   --vp-home-hero-name-background: linear-gradient(135deg, #94D2BD 10%, #0A9396 50%, #005F73 90%);
   --vp-home-hero-image-background-image: linear-gradient(135deg, #94D2BD 10%, #0A9396 50%);
 }
+
+/* Improve Mermaid diagram readability in dark mode */
+
+/* Force dark text for ALL nodes - handles both SVG and HTML labels */
+.dark .mermaid .node .label,
+.dark .mermaid .node .label *,
+.dark .mermaid .node .label div,
+.dark .mermaid .node .label span,
+.dark .mermaid .node text,
+.dark .mermaid .node tspan {
+  fill: #111 !important;
+  color: #111 !important;
+}
+
+/* Edge labels: light text on dark translucent boxes */
+.dark .mermaid .edgeLabel text,
+.dark .mermaid .edgeLabel tspan,
+.dark .mermaid .edgeLabel div,
+.dark .mermaid .edgeLabel span {
+  fill: #f0f0f0 !important;
+  color: #f0f0f0 !important;
+}
+
+/* Subgraph / cluster titles: white text against dark background */
+.dark .mermaid .cluster text,
+.dark .mermaid .cluster tspan,
+.dark .mermaid .cluster-label text,
+.dark .mermaid .cluster-label tspan,
+.dark .mermaid .cluster-label div,
+.dark .mermaid .cluster-label span {
+  fill: #ffffff !important;
+  color: #ffffff !important;
+}
+
+/* Override unstyled (default dark) node fills to a very light grey so dark text works */
+.dark .mermaid .node rect:not([style*="fill"]),
+.dark .mermaid .node circle:not([style*="fill"]),
+.dark .mermaid .node polygon:not([style*="fill"]),
+.dark .mermaid .node path:not([style*="fill"]),
+.dark .mermaid .node rect:not([fill]),
+.dark .mermaid .node circle:not([fill]),
+.dark .mermaid .node polygon:not([fill]),
+.dark .mermaid .node path:not([fill]) {
+  fill: #e8e8e8 !important;
+  stroke: #bbb !important;
+}
+
+/* Fix node label clipping and balance padding */
+.dark .mermaid .node .label foreignObject {
+  overflow: visible !important;
+}
+
+.dark .mermaid .node .label foreignObject div {
+  line-height: 1.2 !important;
+  padding: 4px 8px !important;
+  text-align: center !important;
+  display: block !important;
+}
+
+/* Subgraph backgrounds: slightly lighter dark for contrast */
+.dark .mermaid .cluster rect,
+.dark .mermaid .subgraph rect {
+  fill: rgba(120, 120, 120, 0.25) !important;
+  stroke: rgba(180, 180, 180, 0.4) !important;
+}
+
+/* Fix node label clipping and balance padding */
+.dark .mermaid .node .label foreignObject {
+  overflow: visible !important;
+}
+
+.dark .mermaid .node .label foreignObject div {
+  line-height: 1.2 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  height: 100% !important;
+  text-align: center !important;
+  font-size: 0.9em !important; /* Slightly smaller to fit better */
+}
