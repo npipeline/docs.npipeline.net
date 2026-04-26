@@ -70,6 +70,25 @@
   );
 }
 
+/* Header nav */
+.VPNavBarMenuLink:hover {
+  color: #94d2bd !important;
+}
+
+.VPNavBarMenuLink.active {
+  color: #0a9396 !important;
+}
+
+/* Sidebar */
+.VPSidebarItem.is-active > .item .link > .text {
+  color: #0a9396 !important;
+}
+
+/* Body */
+.vp-doc a {
+  text-decoration: none !important;
+}
+
 /* Let Mermaid diagrams size to their content instead of a fixed container */
 .mermaid-container {
   min-height: auto !important;
@@ -96,42 +115,4 @@
 .mermaid-container:fullscreen .mermaid svg,
 .mermaid-container.dialog-fullscreen-active .mermaid svg {
   width: min(100%, 1400px) !important;
-}
-
-/* Strengthen node outlines */
-.mermaid-container .mermaid svg .node rect,
-.mermaid-container .mermaid svg .node circle,
-.mermaid-container .mermaid svg .node polygon,
-.mermaid-container .mermaid svg .node path {
-  stroke: #888 !important;
-  stroke-width: 2px !important;
-}
-
-/* Contrast fixes for dark mode */
-.dark .mermaid-container .mermaid .node text,
-.dark .mermaid-container .mermaid .node .label,
-.dark .mermaid-container .mermaid .node .nodeLabel,
-.dark .mermaid-container .mermaid .node tspan,
-.dark .mermaid-container .mermaid .node .label div,
-.dark .mermaid-container .mermaid .node .label span {
-  fill: #111 !important;
-  color: #111 !important;
-}
-
-.dark .mermaid-container .mermaid .edgeLabel text,
-.dark .mermaid-container .mermaid .edgeLabel tspan,
-.dark .mermaid-container .mermaid .edgeLabel div,
-.dark .mermaid-container .mermaid .edgeLabel span {
-  fill: #f5f5f5 !important;
-  color: #f5f5f5 !important;
-}
-
-.dark .mermaid-container .mermaid .cluster text,
-.dark .mermaid-container .mermaid .cluster tspan,
-.dark .mermaid-container .mermaid .cluster-label text,
-.dark .mermaid-container .mermaid .cluster-label tspan,
-.dark .mermaid-container .mermaid .cluster-label div,
-.dark .mermaid-container .mermaid .cluster-label span {
-  fill: #ffffff !important;
-  color: #ffffff !important;
 }
