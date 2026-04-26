@@ -1,6 +1,5 @@
 import { defineConfig } from 'vitepress'
 import { generateSidebar } from 'vitepress-sidebar'
-import { withMermaid } from 'vitepress-plugin-mermaid'
 
 const sidebar = generateSidebar({
   documentRootPath: '/docs',
@@ -33,14 +32,11 @@ function fixLinks(items: any[]): any[] {
   })
 }
 
-export default withMermaid({
+export default defineConfig({
   title: 'NPipeline',
   description: 'High-performance .NET data pipeline framework',
   cleanUrls: true,
   lastUpdated: true,
-  mermaid: {
-    theme: 'dark'
-  },
   sitemap: {
     hostname: 'https://docs.npipeline.net'
   },
