@@ -11,8 +11,8 @@
   "devDependencies": {
     "cpy-cli": "7.0.0",
     "vitepress": "1.6.4",
-    "vitepress-sidebar": "1.33.1",
-    "vue": "3.5.33"
+    "vitepress-sidebar": "1.33.2",
+    "vue": "3.5.34"
   },
   "dependencies": {
     "vitepress-mermaid-renderer": "1.1.23"
