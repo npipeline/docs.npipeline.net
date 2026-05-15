@@ -16,19 +16,6 @@ const sidebar = generateSidebar({
   sortMenusByFrontmatterOrder: true,
 });
 
-// function fixLinks(items: any[]): any[] {
-//   return items.map((item) => {
-//     const fixed = { ...item };
-//     if (fixed.link) {
-//       fixed.link = fixed.link.replace(/\/index\.md$/, "/").replace(/\.md$/, "");
-//     }
-//     if (fixed.items) {
-//       fixed.items = fixLinks(fixed.items);
-//     }
-//     return fixed;
-//   });
-// }
-
 export default defineConfig({
   title: "NPipeline",
   description: "High-Performance, Type-Safe, Streaming Data Pipelines in .NET",
@@ -42,12 +29,12 @@ export default defineConfig({
   themeConfig: {
     logo: "/npipeline.png",
     nav: [
-      { text: "Quick Start", link: "/getting-started/quick-start" },
-      { text: "Core Concepts", link: "/core-concepts/" },
-      { text: "Storage Providers", link: "/storage-providers/" },
-      { text: "Connectors", link: "/connectors/" },
-      { text: "Extensions", link: "/extensions/" },
-      { text: "Analyzers", link: "/analyzers/" },
+      // { text: "Quick Start", link: "/getting-started/quick-start" },
+      // { text: "Core Concepts", link: "/core-concepts/" },
+      // { text: "Storage Providers", link: "/storage-providers/" },
+      // { text: "Connectors", link: "/connectors/" },
+      // { text: "Extensions", link: "/extensions/" },
+      // { text: "Analyzers", link: "/analyzers/" },
     ],
     search: {
       provider: "local",
@@ -56,10 +43,10 @@ export default defineConfig({
       { icon: "github", link: "https://github.com/npipeline/NPipeline" },
       // { icon: "twitter", link: "https://twitter.com/NPipeline_" },
     ],
-    sidebar: sidebar, //fixLinks(sidebar),
+    sidebar: sidebar,
     footer: {
       message: "Released under the MIT License.",
-      copyright: "Copyright 2026-present NPipeline",
+      copyright: "",
     },
   },
 });
