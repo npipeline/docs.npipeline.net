@@ -178,7 +178,7 @@ Internally `AddAIRoute` registers two nodes and wires them together:
 1. An `AIEnrichNode<TIn, TField>` that calls the LLM and splices the result onto the item via `ResultMapper`.
 2. A `RouteNode<TIn>` that evaluates `When` predicates against the enriched item and dispatches to the first matching branch.
 
-The `ResultMapper` runs **before** any predicate is tested, so your predicates always see the AI-classified item. Connect your upstream node to `AIRouteBuilder.EnrichHandle`.
+The `ResultMapper` runs **before** any predicate is tested, so your predicates always see the AI-classified item. Connect your upstream node directly to the `AIRouteBuilder` — it implements `IInputNodeHandle<T>` and forwards data to the internal enrich node.
 
 ### `AddAIRoute<TIn, TField>`
 
@@ -203,8 +203,8 @@ route
     .When(c => c.Sentiment == "Negative", negativeSink)
     .Otherwise(reviewHandle);
 
-// Connect your upstream node to EnrichHandle — this is the entry point of the composite
-builder.Connect(source, route.EnrichHandle);
+// Connect your upstream node directly to the builder — it's an IInputNodeHandle<T>
+builder.Connect(source, route);
 ```
 
 ### `AddAIBatchedStreamRoute<TIn, TField>`
@@ -224,7 +224,7 @@ route
     .When(c => c.Sentiment == "Negative", negativeHandle)
     .Otherwise(reviewHandle);
 
-builder.Connect(source, route.EnrichHandle);
+builder.Connect(source, route);
 ```
 
 ### `AIRouteBuilder<T>` API
@@ -233,12 +233,23 @@ builder.Connect(source, route.EnrichHandle);
 
 #### `.When(predicate, target)`
 
-Routes items where `predicate` returns `true` to `target`. Evaluated in declaration order — the item goes to the **first** matching branch only.
+Routes items where `predicate` returns `true` to `target`. By default, only the **first** matching branch receives the item. Use `.WithMatchMode(RouteMatchMode.AllMatches)` to deliver to every matching branch.
 
 ```csharp
 route
     .When(c => c.Sentiment == "Positive", positiveHandle)
     .When(c => c.Sentiment == "Negative", negativeHandle);
+```
+
+#### `.WithMatchMode(mode)`
+
+Sets the match mode for the route node. Defaults to `RouteMatchMode.FirstMatch`. Use `RouteMatchMode.AllMatches` to deliver an item to every matching `When` branch.
+
+```csharp
+route
+    .WithMatchMode(RouteMatchMode.AllMatches)
+    .When(c => c.Sentiment == "Positive", handle1)
+    .When(c => c.Sentiment != null, handle2);
 ```
 
 #### `.Otherwise(target)`
@@ -249,9 +260,7 @@ Routes items that did not match any `When` predicate. If omitted, unmatched item
 route.Otherwise(reviewHandle);
 ```
 
-#### `.EnrichHandle`
-
-The handle of the internal enrich node. **This is the upstream connection point** — pass it to `builder.Connect(upstream, route.EnrichHandle)`.
+`AIRouteBuilder<T>` implements `IInputNodeHandle<T>`, so you can pass it directly to `builder.Connect(source, route)`. Data flows to the internal enrich node first, then through the route node to your branches.
 
 #### `.RouteHandle`
 
@@ -261,8 +270,9 @@ The handle of the internal route node. Use this when you need to attach the rout
 
 | Behaviour | Detail |
 |-----------|--------|
-| **First-match** | Only the first `When` predicate that returns `true` receives the item |
-| **Otherwise** | Catches all items that matched no `When`; optional |
+| **First-match** | Only the first `When` predicate that returns `true` receives the item (default) |
+| **All-matches** | Every `When` predicate that returns `true` receives the item — set via `.WithMatchMode(RouteMatchMode.AllMatches)` |
+| **Otherwise** | Catches all items that matched no `When`; never affected by match mode |
 | **No match, no `Otherwise`** | Item is dropped — standard route node behaviour |
 | **Predicate input** | Predicates always receive the enriched item, after `ResultMapper` has run |
 
