@@ -95,8 +95,10 @@ Key properties for instantiation:
 
 How a node runs is a property of the graph, not of the node. The strategy is defined in the `NodeDefinition` and is configured in two ways:
 
-1. **Builder methods:** `handle.WithExecutionStrategy(builder, strategy)` sets it; `handle.WithResilience(builder)` wraps the current strategy in `ResilientExecutionStrategy`.
+1. **Builder methods:** `handle.WithExecutionStrategy(builder, strategy)` sets it.
 2. **Extension methods:** The parallelism extension adds `.WithParallelExecution()`, which replaces the strategy.
+
+Node restart has no builder method of its own. When a transform's resilience options set `NodeRestart.MaxRestarts` above zero, `Build()` wraps the node's strategy in the internal node restart strategy. The wrapped strategy must implement `IResumableExecutionStrategy`, or the build fails with [NP0425](../reference/error-codes.md). For more information, see [Node restart and the replay window](../error-handling/materialization.md).
 
 A node type that only makes sense under a particular strategy — the batching and unbatching nodes, for example — declares that default by implementing `IExecutionStrategyProvider`, whose `DefaultExecutionStrategy` is read-only. The framework does not modify node instances, making them safe to share.
 
@@ -109,11 +111,14 @@ The strategy for a node is resolved per run, in this order:
 ## Node Lifecycle
 
 1. **Instantiation** - `INodeFactory.Create(definition)` during orchestration setup.
-2. **Strategy resolution** - the strategy is resolved from the definition and the node's own default, and passed to the execution plan. The node instance is not modified.
-3. **Execution** - `OpenStream()`, `TransformAsync()`, or `ConsumeAsync()` called by the executor.
-4. **Disposal** - nodes that implement `IAsyncDisposable` (or `IDisposable`) are disposed during cleanup; the rest are left alone.
+2. **Stateful registration** - if `PipelineContext.StatefulRegistry` is configured, nodes that implement `IStatefulNode` are registered by node ID. A registration failure stops pipeline setup.
+3. **Strategy resolution** - the strategy is resolved from the definition and the node's own default, and passed to the execution plan. The node instance is not modified.
+4. **Execution** - `OpenStream()`, `TransformAsync()`, or `ConsumeAsync()` called by the executor.
+5. **Disposal** - nodes that implement `IAsyncDisposable` (or `IDisposable`) are disposed during cleanup; the rest are left alone.
 
 `INode` carries no lifecycle: it is a marker interface. A node that owns resources (database connections, file handles, etc.) implements `IAsyncDisposable` itself. There is no base implementation to call.
+
+`IStatefulNode` is a separate marker for registry participation. Implement it explicitly on nodes whose state is managed by `IStatefulRegistry`; naming a custom interface or type `IStatefulNode...` has no effect.
 
 ## Next Steps
 

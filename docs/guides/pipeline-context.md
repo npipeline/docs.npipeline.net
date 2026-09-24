@@ -40,7 +40,7 @@ await runner.RunAsync<MyPipeline>(context, cancellationToken);
 PipelineContext exposes three `IDictionary<string, object>` collections with different purposes:
 
 | Dictionary | Purpose | Set By | Read By |
-|-----------|---------|--------|---------|
+| ----------- | --------- | -------- | --------- |
 | `Parameters` | Runtime inputs (file paths, dates, config values) | Caller before execution | Nodes during execution |
 | `Items` | Node-to-node shared state | Any node during execution | Any downstream node |
 | `Properties` | Extension/plugin storage, and hooks the framework reads | You and your extensions | Extensions and the framework (for published hook keys) |
@@ -96,10 +96,10 @@ Framework services are grouped into five sub-contexts, each covering one concern
 sub-context that owns it:
 
 | Sub-context | Holds | Examples |
-|-------------|-------|----------|
+| ------------- | ------- | ---------- |
 | `RunIdentity` | Who this run is | `PipelineId`, `RunId`, `PipelineName`, `PipelineStartTimeUtc` |
 | `Observability` | Logging, tracing, metrics | `LoggerFactory`, `Tracer`, `ExecutionObserver`, `ObservabilityFactory` |
-| `ExecutionConfiguration` | Retry and resilience | `RetryOptions`, `EffectiveRetryOptions`, `GlobalRetryOptions`, `NodeRetryOverrides`, `ResiliencePolicy`, `CircuitBreakerOptions` |
+| `ExecutionConfiguration` | Resilience and run settings | `Resilience`, `GetResilienceOptions(nodeId)`, `ResiliencePolicy`, `OptimizationProfile`, `IsParallelExecution` |
 | `NodeEnvironment` | Per-node execution state | `GetNodeId(node)`, `TryGetNodeId(node, out id)`, `GetNodeStatus(nodeId)`, `EnumerateNodeStatuses()`, `NodeExecutionScopeRegistry`, `DiOwnedNodes` |
 | `Lineage` | Lineage sinks and collectors | `LineageSink`, `PipelineLineageSink`, `LineageCollector`, `LineageFactory` |
 
@@ -153,12 +153,34 @@ Nodes that have not finished report `NodeExecutionStatus.Pending` and are absent
 A few members sit directly on the context because they belong to no single concern:
 
 | Member | Type | Description |
-|--------|------|-------------|
+| -------- | ------ | ------------- |
 | `CancellationToken` | `CancellationToken` | Pipeline-wide cancellation |
 | `Parameters`, `Items`, `Properties` | `IDictionary<string, object>` | The three dictionaries above |
 | `DeadLetterSink` | `IDeadLetterSink?` | For routing failed items |
 | `ErrorHandlerFactory` | `IErrorHandlerFactory` | Creates error handlers |
-| `StateManager`, `StatefulRegistry` | `IPipelineStateManager?`, `IStatefulRegistry?` | Stateful execution services. Assign them here, or supply one for every run with the `ExecutionAnnotationKeys.GlobalStateManager` / `GlobalStatefulRegistry` builder annotation |
+| `StateManager`, `StatefulRegistry` | `IPipelineStateManager?`, `IStatefulRegistry?` | Stateful execution services. Assign them here, or supply one for every run with the `ExecutionAnnotationKeys.GlobalStateManager` / `GlobalStatefulRegistry` builder annotation. |
+
+### Stateful node registration
+
+When `StatefulRegistry` is configured, NPipeline registers each node that implements `IStatefulNode` during pipeline setup:
+
+```csharp
+public sealed class RunningTotalNode : TransformNode<int, int>, IStatefulNode
+{
+    private int _total;
+
+    public override ValueTask<int> TransformAsync(
+        int item,
+        PipelineContext context,
+        CancellationToken cancellationToken)
+    {
+        _total += item;
+        return ValueTask.FromResult(_total);
+    }
+}
+```
+
+Implement the marker explicitly. NPipeline doesn't infer stateful behavior from an interface or type name. If the registry rejects a node or otherwise fails during registration, pipeline setup fails with that exception.
 
 > **Note:** Earlier versions also exposed every one of these as a flat property on `PipelineContext` itself, so
 > `context.LoggerFactory` and `context.Observability.LoggerFactory` both worked. The flat forwarders are gone: there is
@@ -181,11 +203,10 @@ var context = new PipelineContext(config);
 Available factory methods:
 
 | Method | Purpose |
-|--------|---------|
+| -------- | --------- |
 | `WithParameters(dict)` | Set runtime parameters |
 | `WithCancellation(token)` | Set cancellation token |
 | `WithLogging(loggerFactory)` | Configure logging |
-| `WithRetry(retryOptions)` | Set retry configuration |
 | `WithResilience(policy)` | Set resilience policy |
 | `WithErrorHandling(deadLetterSink?)` | Configure error handling |
 | `WithObservability(loggerFactory?, tracer?)` | Configure observability |
