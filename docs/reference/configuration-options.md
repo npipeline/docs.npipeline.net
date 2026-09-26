@@ -254,11 +254,9 @@ Controls windowed aggregation behavior. Passed when configuring aggregate nodes.
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `WindowAssigner` | `WindowAssigner` | *(required)* | Window strategy (tumbling, sliding, session). |
-| `TimestampExtractor` | `TimestampExtractor<TIn>?` | `null` | Extracts event time from items. `null` = use system arrival time. |
-| `MaxOutOfOrderness` | `TimeSpan?` | 5 min | Grace period for late-arriving events. |
-| `WatermarkInterval` | `TimeSpan?` | 30 sec | How often watermarks advance. |
-| `UseThreadSafeAccumulator` | `bool` | `true` | Use `ConcurrentDictionary` vs. `Dictionary` for accumulation. |
+| `WindowAssigner` | `WindowAssigner` | *(required)* | Window strategy (tumbling, sliding). Window sizes and slides must be positive. |
+| `TimestampExtractor` | `TimestampExtractor<TIn>?` | `null` | Extracts event time from items. `null` = use arrival time for items that are not `ITimestamped`. |
+| `MaxOutOfOrderness` | `TimeSpan?` | 5 min | Grace period for late-arriving events. Must not be negative. The watermark is re-evaluated on every item. |
 
 ## PipelineContextConfiguration
 
@@ -284,6 +282,10 @@ Configures the initial state of `PipelineContext` before pipeline execution.
 Static members: `PipelineContextConfiguration.Default`, `WithParameters(parameters)`, `WithCancellation(token)`, `WithLogging(loggerFactory)`, `WithObservability(loggerFactory, tracer)`, `WithErrorHandling(deadLetterSink)`, `WithResilience(policy)`, `WithFactories(...)`
 
 Resilience options aren't part of this record. Set them on the pipeline builder with `WithResilience`.
+
+The system uses the `ResiliencePolicy` set through `PipelineContextConfiguration.WithResilience(policy)` when the graph doesn't
+configure one. The full precedence at run time is: the node's own policy, then the graph's policy instance, then the
+graph's policy type, then the context policy, then `DefaultResiliencePolicy.Instance`.
 
 ## Next Steps
 

@@ -46,7 +46,7 @@ builder.Connect(source, auditTap);
 builder.Connect(auditTap, transform);  // items continue downstream
 ```
 
-Taps are useful for logging, metrics collection, or debugging without altering the pipeline's data flow.
+Taps are useful for logging, metrics collection, or debugging without altering the pipeline's data flow. The pipeline drives the sink once over the whole stream; for example, a file sink opens its target once and writes every row instead of rewriting the file for each item. A bounded channel buffers items between the main flow and the sink.
 
 You can chain multiple taps:
 
@@ -108,6 +108,17 @@ var processor = builder.AddTransform<TradeProcessor, Trade, ProcessedTrade>("pro
 builder.Connect(nyse, processor);
 builder.Connect(nasdaq, processor);
 ```
+
+The merge reads every input concurrently. If one input fails, the node fails at once, and the other inputs are
+stopped. The merge buffer is bounded (1,024 items by default), so a slow node applies backpressure to its inputs
+instead of buffering them in memory. Change the bound for every fan-in node, or for one node:
+
+```csharp
+builder.WithGlobalMergeCapacity(256);          // every node with several inputs
+builder.WithMergeCapacity(sink.Id, 64);        // this node only; overrides the global value
+```
+
+Joins use the same bound for their two inputs.
 
 All inbound streams must share a single runtime item type. When item-level lineage is enabled, the runtime item type is `LineagePacket<T>` - the merge operates on `LineagePacket<Trade>` streams and produces a merged `LineagePacket<Trade>` stream, preserving lineage context. No conversion or reflection is involved.
 

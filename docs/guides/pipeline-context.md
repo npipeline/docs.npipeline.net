@@ -88,7 +88,7 @@ public override async Task ConsumeAsync(
 }
 ```
 
-> **Thread Safety:** In the `Default` [optimization profile](optimization-profiles.md), `Parameters`, `Items`, and `Properties` are backed by `ConcurrentDictionary` and support concurrent reads and writes. In `HighThroughput` mode, they are plain `Dictionary` instances with zero locking overhead but no thread safety. For complex shared state in parallel execution, use [`IPipelineStateManager`](parallel-execution.md#ipipelinestatemanager).
+> **Thread Safety:** In the `Default` [optimization profile](optimization-profiles.md), `Parameters`, `Items`, and `Properties` support concurrent reads and writes: the context creates them as `ConcurrentDictionary` instances, copies caller-supplied `Parameters` into one, and wraps caller-supplied `Items` and `Properties` in a view that locks on the dictionary you supplied. In `HighThroughput` mode, they are plain `Dictionary` instances with zero locking overhead but no thread safety. For complex shared state in parallel execution, use [`IPipelineStateManager`](parallel-execution.md#ipipelinestatemanager).
 
 ## Accessing Framework Services
 
@@ -99,8 +99,8 @@ sub-context that owns it:
 | ------------- | ------- | ---------- |
 | `RunIdentity` | Who this run is | `PipelineId`, `RunId`, `PipelineName`, `PipelineStartTimeUtc` |
 | `Observability` | Logging, tracing, metrics | `LoggerFactory`, `Tracer`, `ExecutionObserver`, `ObservabilityFactory` |
-| `ExecutionConfiguration` | Resilience and run settings | `Resilience`, `GetResilienceOptions(nodeId)`, `ResiliencePolicy`, `OptimizationProfile`, `IsParallelExecution` |
-| `NodeEnvironment` | Per-node execution state | `GetNodeId(node)`, `TryGetNodeId(node, out id)`, `GetNodeStatus(nodeId)`, `EnumerateNodeStatuses()`, `NodeExecutionScopeRegistry`, `DiOwnedNodes` |
+| `ExecutionConfiguration` | Resilience and run settings | `Resilience`, `GetResilienceOptions(nodeId)`, `ResiliencePolicy`, `OptimizationProfile` |
+| `NodeEnvironment` | Per-node execution state | `GetNodeId(node)`, `TryGetNodeId(node, out id)`, `GetNodeStatus(nodeId)`, `EnumerateNodeStatuses()`, `NodeExecutionScopeRegistry` |
 | `Lineage` | Lineage sinks and collectors | `LineageSink`, `PipelineLineageSink`, `LineageCollector`, `LineageFactory` |
 
 ```csharp
@@ -207,7 +207,7 @@ Available factory methods:
 | `WithParameters(dict)` | Set runtime parameters |
 | `WithCancellation(token)` | Set cancellation token |
 | `WithLogging(loggerFactory)` | Configure logging |
-| `WithResilience(policy)` | Set resilience policy |
+| `WithResilience(policy)` | Set resilience policy. Use this when the graph doesn't configure one; a graph-level policy takes precedence. |
 | `WithErrorHandling(deadLetterSink?)` | Configure error handling |
 | `WithObservability(loggerFactory?, tracer?)` | Configure observability |
 

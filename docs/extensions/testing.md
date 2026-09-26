@@ -122,6 +122,19 @@ if (context.TryGetInMemorySink<Order>(out var sink))
 }
 ```
 
+### Replacing a node with a test double
+
+To swap one node of an existing pipeline for a test double, supply it through the context under the node's id (the
+sanitized, lower-case form of its name):
+
+```csharp
+var context = new PipelineContext();
+context.NodeEnvironment.PreconfiguredNodeInstances["order-sink"] = new InMemorySinkNode<Order>();
+```
+
+The run owns an instance supplied this way and disposes it when the run ends. Create a new instance for each run: an
+instance reused across runs is already disposed the second time. An id that matches no node fails the build.
+
 ## Testing Nodes with DI Dependencies
 
 Use a mocking framework (e.g., Moq) to inject dependencies:
@@ -150,7 +163,9 @@ public async Task EmailNode_SendsNotification()
 
 ## Testing Error Handling
 
-Use `CaptureErrors()` to test resilience and error paths:
+Use `CaptureErrors()` to test resilience and error paths. It wraps whichever policy the run resolves, including one
+the pipeline registers itself with `builder.AddResiliencePolicy(...)`: that policy still runs first, then the error is
+captured and the harness's decision (`Skip` by default) applies.
 
 ```csharp
 [Fact]

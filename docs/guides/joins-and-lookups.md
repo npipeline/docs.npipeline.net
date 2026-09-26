@@ -53,6 +53,10 @@ Set the `JoinType` property to control matching behavior:
 
 Each item is paired with every item on the other side that shares its key. For example, one customer and three orders with the same `CustomerId` produce three outputs. Many-to-many keys produce every pairing. Outer joins call the fallback methods only for items that never matched anything.
 
+A **null** key never matches anything (as in SQL). An outer join still emits the row, through its side's fallback method; an inner join discards it.
+
+Input types must be distinct. Joins with identical or assignable input types are rejected at construction because the system cannot distinguish them at runtime. Use `AddSelfJoin` to join a stream with itself, or give the two inputs distinct wrapper types.
+
 ### Memory Limits
 
 A keyed join can't know whether another item with the same key will arrive later, so it keeps every item from both inputs in memory until the input streams end. This applies to every join type, including `Inner`. Set `MaxCapacity` to limit how many items each input retains:
@@ -88,6 +92,14 @@ public class TradeSettlementJoin
 
 Within a window, time-windowed joins pair items the same way keyed joins do. They use [watermarks](../reference/glossary.md#watermark) to close expired windows and release memory. For outer joins, the unmatched items in a window are emitted when that window closes.
 
+Watermarks are computed from the **same event time** used to assign windows: the item's `ITimestamped.Timestamp`, or the corresponding `timestampExtractor`, or arrival time when neither is available. Historical, replayed or back-filled data therefore joins correctly.
+
+The join's watermark advances only when both inputs produce an item. It follows the slower input to prevent faster inputs from prematurely evicting windows from the slower stream. An input that never produces holds all state until the end of the stream.
+
+Items arriving after their window closes are dropped and counted in the `LateItemsDropped` property. Outer joins emit such an item at once as unmatched when its side is preserved by the join type.
+
+Windows are evaluated independently: an item that lives in several sliding windows participates in each of them. A pair is emitted once per shared window, and a left-outer join can emit an item as unmatched from one window even though it matched in another (per-window semantics, as in Flink).
+
 ## In-Memory Lookups
 
 For enriching items from a static dictionary, use the lambda-based `AddInMemoryLookup`:
@@ -110,7 +122,8 @@ builder.Connect(source, lookup);
 
 ### Custom Lookup Nodes
 
-For dynamic lookups (database, API), extend `LookupNode`:
+For dynamic lookups (database, API), extend `LookupNode`. `LookupAsync` returns a `ValueTask`, so a lookup that
+completes synchronously, such as a cache hit, costs no allocation:
 
 ```csharp
 public class CustomerLookup : LookupNode<Order, int, Customer, EnrichedOrder>
@@ -118,7 +131,7 @@ public class CustomerLookup : LookupNode<Order, int, Customer, EnrichedOrder>
     protected override int ExtractKey(Order input, PipelineContext context)
         => input.CustomerId;
 
-    protected override async Task<Customer?> LookupAsync(
+    protected override async ValueTask<Customer?> LookupAsync(
         int key, PipelineContext context, CancellationToken ct)
         => await _db.FindCustomerAsync(key, ct);
 
@@ -136,6 +149,8 @@ public class CustomerLookup : LookupNode<Order, int, Customer, EnrichedOrder>
 | Time-Windowed Join | Two live streams, match by key within a time window, continuous processing |
 | In-Memory Lookup | One live stream + one static reference dataset |
 | Custom Lookup | One live stream + dynamic lookups (DB, API) per item |
+
+A join reads both of its inputs concurrently, so an unbounded live input on one side does not starve the other. A consequence is that the order in which items from the two sides reach the join is not deterministic: pairing and output content are deterministic, but the order of join output across the two inputs is not.
 
 ## Self-Joins
 
